@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DATA MANAGEMENT SYSTEM</title>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #27ae60; --danger: #e74c3c; --info: #3498db; --light: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--light); font-size: 11px; }
+        #login-page { display: flex; justify-content: center; align-items: center; height: 100vh; background: var(--primary); }
+        .login-card { background: white; padding: 30px; border-radius: 10px; width: 300px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #admin-page { display: none; }
+        header { background: var(--primary); color: white; padding: 10px; text-align: center; border-bottom: 4px solid var(--secondary); }
+        .controls-container { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .control-row { display: flex; gap: 10px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); align-items: center; flex-wrap: wrap; }
+        #settings-panel { display: none; background: #fff; padding: 15px; border-radius: 8px; margin: 10px; border: 1px solid #ddd; }
+        input, select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; outline: none; font-size: 12px; }
+        
+        .table-container { background: white; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 10px; }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 1300px; }
+        .admin-table th, .admin-table td { border: 1px solid #bbb; padding: 5px; text-align: center; }
+        
+        .main-input { width: 40px; border: 1px solid #ddd; padding: 4px; border-radius: 3px; text-align: center; }
+        .name-input { width: 160px; text-align: left; text-transform: uppercase; }
+        .fee-input { width: 60px; }
+        .attd-input { width: 45px; background: #fffde7; }
+
+        .btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 11px; }
+        .btn-add { background: var(--secondary); }
+        .btn-info { background: var(--info); }
+        .btn-del { background: var(--danger); }
+
+        .status-badge { display: inline-flex; align-items: center; padding: 3px 8px; margin: 2px; border-radius: 12px; background: #e1f5fe; color: #01579b; font-size: 10px; border: 1px solid #0288d1; }
+        .del-log-btn { color: red; margin-left: 6px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        #approval-log { margin: 10px; padding: 10px; background: #fff; border-radius: 8px; border-left: 5px solid var(--secondary); }
+
+        /* TEACHER PORTAL STYLES */
+        #teacher-portal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 10px; box-sizing: border-box; overflow-y: auto; }
+        #teacher-portal .admin-table { min-width: 100%; }
+        #teacher-portal .t-input { width: 45px; padding: 5px; text-align: center; border: 1px solid #ddd; }
+        .teacher-header { background: var(--info); color: white; padding: 15px; border-radius: 5px; margin-bottom: 15px; text-align: center; }
+        .teacher-controls { background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; }
+        
+        #student-card-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; overflow-y: auto; padding: 10px; box-sizing: border-box; }
+        .result-tools { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; padding: 10px; background: #1a1a1a; border-radius: 5px; align-items: center; }
+        .nav-select { background: #333; color: #fff; border: 1px solid #555; padding: 5px; font-size: 10px; }
+        .card-container { max-width: 800px; margin: 0 auto; border: 1px solid #fff; padding: 15px; background: #000; color: #fff; }
+        .card-header { text-align: center; border-bottom: 1px solid #fff; margin-bottom: 10px; padding-bottom: 5px; }
+        .report-title { border-bottom: 1px solid #fff; display: inline-block; padding: 2px 15px; margin-top: 5px; font-weight: bold; letter-spacing: 1px; }
+        .card-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; font-size: 11px; }
+        .card-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
+        .card-table th, .card-table td { border: 1px solid #444; padding: 4px; text-align: center; }
+        .card-table th { background: #111; text-transform: uppercase; }
+        .summary-bar { display: flex; justify-content: space-between; border: 1px solid #444; padding: 6px; background: #111; font-weight: bold; font-size: 11px; margin-bottom: 10px; }
+        .section-header { text-align: center; font-weight: bold; font-size: 10px; border-bottom: 1px solid #444; margin-bottom: 5px; padding-bottom: 2px; }
+        .fees-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; font-size: 10px; border: 1px solid #444; padding: 5px; margin-bottom: 10px; }
+        .remark-box { border: 1px solid #444; padding: 5px; min-height: 40px; font-size: 10px; margin-bottom: 10px; }
+        .dates-footer { display: flex; justify-content: space-between; border: 1px solid #444; padding: 5px; font-size: 10px; margin-bottom: 20px; }
+        .signature-row { display: flex; justify-content: space-around; margin-top: 30px; border-top: 1px solid #444; padding-top: 5px; font-weight: bold; font-size: 10px; }
+        .card-edit { background: transparent; color: #fff; border: none; border-bottom: 1px dashed #555; font-family: inherit; font-size: 11px; padding: 1px; text-align: center; text-transform: uppercase; }
+
+        /* MASTER LIST SPECIFIC STYLES */
+        #master-list-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 3000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .master-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
+        .master-table th, .master-table td { border: 1px solid black; padding: 4px; text-align: center; }
+        .master-header-text { text-align: center; margin-bottom: 15px; }
+
+        @media print { 
+            @page { size: A4; margin: 5mm 10mm 5mm 10mm; }
+            body { background: white !important; -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; } 
+            
+            #student-card-view { position: static; display: block; background: white !important; padding: 0; margin: 0; height: auto; overflow: visible; }
+            .card-container { border: 2px solid black !important; width: 100%; max-width: 100%; margin: 0 auto; background: white !important; color: black !important; box-sizing: border-box; page-break-inside: avoid; }
+            
+            /* Master List Print Mode */
+            #master-list-view { display: block !important; position: static; padding: 0; }
+            @page { size: A4 landscape; }
+            .master-table th, .master-table td { border: 1px solid black !important; }
+
+            .card-table th, .card-table td, .summary-bar, .fees-grid, .remark-box, .dates-footer { border: 1px solid black !important; color: black !important; background: white !important; }
+            .signature-row { border-top: 1px solid black !important; color: black !important; margin-top: 20px; padding-bottom: 10px; }
+            .card-edit { color: black !important; border-bottom: none !important; }
+            .report-title { border: 1px solid black !important; color: black !important; }
+            textarea { color: black !important; border: none !important; background: white !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="login-page">
+    <div class="login-card">
+        <h2 style="color: var(--primary)">DATA MANAGEMENT SYSTEM</h2>
+        <div id="expiry-zone" style="display:none; margin-bottom:15px; border:2px solid red; padding:15px; border-radius:10px;">
+            <p style="color:red; font-weight:bold; font-size:14px;">SYSTEM LOCKED (EXPIRED)</p>
+            <p style="font-size:10px; color:#555;">Contact Admin to Unlock:</p>
+            <p style="font-weight:bold; margin:5px 0;">AMINU MUHAMMAD</p>
+            <p style="color:blue; font-weight:bold;">07068936675</p>
+            <hr>
+            <input type="password" id="unlock-pin" placeholder="Enter PIN Code" style="width:80%; margin-bottom:5px;">
+            <button class="btn btn-info" onclick="unlockSystem()">UNLOCK SYSTEM</button>
+        </div>
+        <div id="login-form">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password" style="margin: 10px 0;">
+            <button class="btn btn-add" style="width:100%" onclick="login()">LOGIN (ADMIN)</button>
+            <hr>
+            <button class="btn btn-info" style="width:100%" onclick="openTeacherPortal()">TEACHER PORTAL</button>
+        </div>
+    </div>
+</div>
+
+<div id="admin-page">
+    <header>
+        <button class="btn btn-del no-print" onclick="location.reload()" style="float: right; margin: 5px;">Logout</button>
+        <button class="btn btn-info no-print" onclick="toggleSettings()" style="float: left; margin: 5px;">⚙️ Settings</button>
+        <h2>DATA MANAGEMENT SYSTEM - ADMIN</h2>
+    </header>
+
+    <div id="settings-panel" class="no-print">
+        <div style="display: flex; justify-content: space-between;"><h3>Settings</h3><button class="btn btn-del" onclick="toggleSettings()">Close</button></div>
+        
+        <h4 style="color: var(--info)">Teacher Result Approval (Upload File)</h4>
+        <div style="background: #eef7ff; padding: 10px; border: 1px solid #b3d7ff; border-radius: 5px; margin-bottom: 15px;">
+            <p style="font-size: 10px; margin-bottom: 5px;">Select the file sent by the teacher (All Results File):</p>
+            <input type="file" id="admin-result-file" accept=".json" style="width:100%; margin-bottom:10px;">
+            <button class="btn btn-info" style="width:100%" onclick="approveResultFromFile()">Approve & Save All Results</button>
+        </div>
+        <hr>
+
+        <h4>1. Global Registration & Fees</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f9f9f9; padding: 10px; border: 1px solid #eee;">
+            <div>
+                Days Open: <br>
+                <input type="number" id="set-days-open" placeholder="e.g. 100" style="width:80%" onchange="saveGlobalSettings()">
+            </div>
+            <div>
+                School Fees (₦): <br>
+                <input type="number" id="set-global-fee" placeholder="e.g. 5000" style="width:80%">
+                <button class="btn btn-add" style="margin-top:5px; font-size:9px" onclick="applyGlobalFee()">Apply to All</button>
+            </div>
+            <div>
+                Next Term Fees (₦): <br>
+                <input type="number" id="set-next-fee" placeholder="e.g. 6000" style="width:80%">
+                <button class="btn btn-info" style="margin-top:5px; font-size:9px" onclick="applyNextTermFee()">Apply to All Cards</button>
+            </div>
+        </div>
+        <hr>
+
+        <h4>2. Manage Subjects (Categories)</h4>
+        <div class="subjects-wrapper">
+            <div class="sub-category-box">
+                <strong style="color: var(--secondary)">NURSERY SUBJECTS</strong>
+                <div style="display: flex; gap: 5px; margin: 10px 0;">
+                    <input type="text" id="new-jss-sub" placeholder="Subject Name" style="flex:1;">
+                    <button class="btn btn-add" onclick="addSubject('jss')">+</button>
+                </div>
+                <div id="jss-subject-list" style="max-height: 120px; overflow-y: auto; background: #fff; padding: 5px; border: 1px solid #eee;"></div>
+            </div>
+            <div class="sub-category-box">
+                <strong style="color: var(--info)">PRIMARY SUBJECTS</strong>
+                <div style="display: flex; gap: 5px; margin: 10px 0;">
+                    <input type="text" id="new-ss-sub" placeholder="Subject Name" style="flex:1;">
+                    <button class="btn btn-add" onclick="addSubject('ss')">+</button>
+                </div>
+                <div id="ss-subject-list" style="max-height: 120px; overflow-y: auto; background: #fff; padding: 5px; border: 1px solid #eee;"></div>
+            </div>
+        </div>
+        <hr>
+        <h4>3. Backup & Restore</h4>
+        <button class="btn btn-info" onclick="exportData()">Download Backup</button>
+        <button class="btn btn-add" onclick="document.getElementById('importFile').click()">Restore Data</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+        <hr>
+        <h4>4. Security (Change Password)</h4>
+        <input type="password" id="old-pass" placeholder="Old Password">
+        <input type="password" id="new-pass" placeholder="New Password">
+        <input type="password" id="conf-pass" placeholder="Confirm Password">
+        <button class="btn btn-del" onclick="changePassword()">Update</button>
+        <hr>
+        <h4>5. School Dates</h4>
+        Vacation: <input type="text" id="set-vacation" onchange="saveDatesFromSettings()">
+        Resumption: <input type="text" id="set-resumption" onchange="saveDatesFromSettings()">
+        <hr>
+        <h4 style="color: var(--secondary)">6. Teacher Portal Tools</h4>
+        <div style="background: #f0fff4; padding: 10px; border: 1px solid #c6f6d5; border-radius: 5px;">
+            <p style="font-size: 10px; margin-bottom: 5px;">Generate data file for all students:</p>
+            <button class="btn btn-add" style="width:100%; margin-bottom:5px" onclick="generateAllSchoolFile()">DOWNLOAD ALL STUDENTS FILE</button>
+            <p style="font-size: 9px; color: #666;">This will download a file that you will send to teachers on WhatsApp for them to fill scores.</p>
+        </div>
+    </div>
+
+    <div class="controls-container no-print">
+        <div class="control-row">
+            <button class="btn btn-info" onclick="viewFirstStudent()">VIEW RESULTS</button>
+            <button class="btn btn-add" style="background:#8e44ad" onclick="openMasterList()">MASTER LIST (PRINT)</button>
+            <div style="flex: 1; text-align: right;">
+                <button class="btn btn-add" onclick="addNewRow()">+ New Student</button>
+            </div>
+        </div>
+        <div class="control-row" style="background: #e8ecef; border: 1px solid #ccc;">
+            <strong>Class:</strong>
+            <select id="std-class" onchange="initHeader(); render();">
+                <option>PRE-NURSERY</option>
+                <option>NURSERY 1</option>
+                <option>NURSERY 2</option>
+                <option>NURSERY 3</option>
+                <option>PRIMARY 1</option>
+                <option>PRIMARY 2</option>
+                <option>PRIMARY 3</option>
+                <option>PRIMARY 4</option>
+                <option>PRIMARY 5</option>
+            </select>
+            <strong>Term:</strong>
+            <select id="std-term" onchange="render()"><option value="1st Term">1st Term</option><option value="2nd Term">2nd Term</option><option value="3rd Term">3rd Term</option></select>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="admin-table">
+            <thead><tr id="hr1"></tr><tr id="hr2"></tr></thead>
+            <tbody id="student-list"></tbody>
+        </table>
+    </div>
+
+    <div id="approval-log" class="no-print">
+        <strong>RECENT APPROVALS (Tracking):</strong>
+        <div id="log-content" style="display: flex; flex-wrap: wrap; margin-top: 5px;">
+            <span style="color:#888; font-size:10px;">No results approved yet.</span>
+        </div>
+    </div>
+</div>
+
+<div id="master-list-view">
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button class="btn btn-info" onclick="window.print()">Print Master List</button>
+        <button class="btn btn-del" onclick="closeMasterList()">Back to Admin</button>
+    </div>
+    <div class="master-header-text">
+        <h2 style="margin:0;">DATA MANAGEMENT SYSTEM - MASTER LIST</h2>
+        <h3 id="ml-title" style="margin:5px 0; font-weight: normal; font-size: 14px;"></h3>
+    </div>
+    <table class="master-table">
+        <thead id="ml-head"></thead>
+        <tbody id="ml-body"></tbody>
+    </table>
+</div>
+
+<div id="teacher-portal">
+    <div class="teacher-header">
+        <h2 style="margin:0">TEACHER PORTAL - SCORE ENTRY</h2>
+        <p style="font-size:11px; margin-top:5px">Select Class, Term, and Subject to fill scores then click Download.</p>
+    </div>
+    
+    <div class="teacher-controls">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div>
+                <strong>Class:</strong><br>
+                <select id="t-class-select" onchange="populateSubjectDropdown(); loadTeacherList();" style="width:100%">
+                    <option>PRE-NURSERY</option>
+                    <option>NURSERY 1</option>
+                    <option>NURSERY 2</option>
+                    <option>NURSERY 3</option>
+                    <option>PRIMARY 1</option>
+                    <option>PRIMARY 2</option>
+                    <option>PRIMARY 3</option>
+                    <option>PRIMARY 4</option>
+                    <option>PRIMARY 5</option>
+                </select>
+            </div>
+            <div>
+                <strong>Term:</strong><br>
+                <select id="t-term-select" onchange="loadTeacherList();" style="width:100%">
+                    <option value="1st Term">1st Term</option>
+                    <option value="2nd Term">2nd Term</option>
+                    <option value="3rd Term">3rd Term</option>
+                </select>
+            </div>
+            <div>
+                <strong>Subject:</strong><br>
+                <select id="t-subject-select" onchange="loadTeacherList();" style="width:100%"></select>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="file" id="teacher-import-file" accept=".json" style="display:none" onchange="importFromAdminFile(event)">
+            <button class="btn btn-add" style="flex:1" onclick="document.getElementById('teacher-import-file').click()">📂 1. LOAD ADMIN FILE</button>
+            <button class="btn btn-info" style="flex:1; background: #8e44ad;" onclick="loadTeacherList()">🔄 REFRESH LIST</button>
+            <button class="btn btn-del" style="width:100px" onclick="location.reload()">BACK</button>
+        </div>
+    </div>
+
+    <div class="table-container" style="margin:0; padding:0; box-shadow: none; border: 1px solid #ddd;">
+        <table class="admin-table" style="min-width: 100%">
+            <thead>
+                <tr style="background:#2c3e50; color: white;">
+                    <th style="width:30px">#</th>
+                    <th style="text-align:left">STUDENT NAME</th>
+                    <th style="width:60px">CA (40)</th>
+                    <th style="width:60px">EXAM (60)</th>
+                    <th style="width:50px">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody id="teacher-student-list">
+                <tr><td colspan="5" style="padding:20px; color:#666;">Load the "Admin File" then select a Class to start filling scores.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; padding: 20px; background: #f0f7ff; border-radius: 10px; border: 2px dashed #3498db;">
+        <button class="btn btn-info" style="width: 100%; padding: 15px; font-size: 14px;" onclick="downloadTeacherResultFile()">
+            💾 2. DOWNLOAD ALL RESULTS
+        </button>
+        <p style="font-size: 11px; color: #2c3e50; margin-top: 8px; font-weight: bold;">
+            After entering the scores for any class/subject, click the button above to download the file containing ALL school data to send to Admin.
+        </p>
+    </div>
+</div>
+
+<div id="student-card-view">
+    <div class="result-tools no-print">
+        <button class="btn btn-info" onclick="window.print()">Print Result</button>
+        <button class="btn btn-del" onclick="closeView('student-card-view')">Go Back</button>
+        <input type="number" id="nav-roll" class="nav-select" style="width:50px;" placeholder="Roll No" oninput="goToRoll(this.value)">
+        <button class="btn btn-info" onclick="searchStudent()">Search</button>
+        <select id="nav-class" class="nav-select" onchange="navigateStudent()"><option value="">Class</option>
+            <option>PRE-NURSERY</option><option>NURSERY 1</option><option>NURSERY 2</option><option>NURSERY 3</option>
+            <option>PRIMARY 1</option><option>PRIMARY 2</option><option>PRIMARY 3</option><option>PRIMARY 4</option><option>PRIMARY 5</option>
+        </select>
+        <select id="nav-term" class="nav-select" onchange="navigateStudent()"><option value="1st Term">1st Term</option><option value="2nd Term">2nd Term</option><option value="3rd Term">3rd Term</option></select>
+    </div>
+    <div class="card-container">
+        <div class="card-header">
+            <h2 style="margin:0; font-size: 18px;">DATA MANAGEMENT SYSTEM</h2>
+            <div style="font-size: 9px; margin-top: 2px;">Motto: Learning Today, Leading Tomorrow.<br>Addr: NO 1 GRA GUSAU OPPOSITE PRESEDENTIAL LODGE<br>Phone: 08026881467, 07068936675</div>
+            <div class="report-title">STUDENT ACADEMIC REPORT SHEET</div>
+        </div>
+        <div id="card-meta"></div>
+        <table class="card-table">
+            <thead><tr><th style="width: 40%;">SUBJECT</th><th>C.A (40)</th><th>EXAM (60)</th><th>TOTAL</th><th>GRADE</th></tr></thead>
+            <tbody id="card-body"></tbody>
+        </table>
+        <div class="summary-bar">
+            <span>TERM AVERAGE: <span id="card-avg"></span>%</span>
+            <span>POSITION: <input type="text" id="v-pos" class="card-edit" style="width:50px; font-weight:bold;" oninput="updateDataField('manualPos', this.value)"></span>
+        </div>
+        <div class="section-header">ATTENDANCE & FINANCIAL STATUS</div>
+        <div class="fees-grid">
+            <div style="grid-column: span 4; border-bottom: 1px solid #444; padding-bottom: 2px; margin-bottom: 2px;">
+                Attendance | Days Open: <span id="v-days-open"></span> 
+                Present: <input type="number" id="v-attd" class="card-edit" style="width:30px" oninput="updateAttendance(this.value)"> 
+                Absent: <span id="v-absent"></span>
+            </div>
+            <div>Total: ₦<input type="number" id="v-f-total" class="card-edit" style="width:60px" oninput="updateFees('total', this.value)"></div>
+            <div>Paid: ₦<input type="number" id="v-f-paid" class="card-edit" style="width:60px" oninput="updateFees('paid', this.value)"></div>
+            <div>Bal: ₦<span id="v-f-bal"></span></div>
+            <div>Next: ₦<input type="number" id="v-f-next" class="card-edit" style="width:60px" oninput="updateFees('next', this.value)"></div>
+        </div>
+        <div class="section-header" style="text-align:left">CLASS TEACHER'S REMARK:</div>
+        <div class="remark-box"><textarea id="v-remark" style="width:100%; height:30px; border:none; background:transparent; color: inherit; font-family: inherit; font-size: 10px;" placeholder="Write remark here..." oninput="updateDataField('remark', this.value)"></textarea></div>
+        <div id="card-decision" style="display:none; margin-bottom: 10px; font-weight: bold; border: 1px solid #fff; padding: 5px;">DECISION: <input type="text" id="v-decision" class="card-edit" style="width:150px" oninput="updateDataField('decision', this.value)"></div>
+        <div class="dates-footer"><span>Vacation: <span id="v-vac-date"></span></span><span>Resumption: <span id="v-res-date"></span></span></div>
+        <div class="signature-row"><div>Class Teacher</div><div>Principal / Head Teacher</div></div>
+    </div>
+</div>
+
+<script>
+    let students = JSON.parse(localStorage.getItem('bta_students')) || [];
+    let subjects = JSON.parse(localStorage.getItem('bta_subjects'));
+    if (!subjects || Array.isArray(subjects)) {
+        subjects = {
+            jss: ['NUMERACY', 'LITERACY', 'QURAN', 'ARABIC', 'RHYMES', 'COLORING'],
+            ss: ['MATHEMATICS', 'ENGLISH', 'QURAN', 'ARABIC', 'BASIC SCIENCE', 'SOCIAL STUDIES', 'HAUSA']
+        };
+    }
+    
+    let dates = JSON.parse(localStorage.getItem('bta_dates')) || { vac: "", res: "" };
+    let auth = JSON.parse(localStorage.getItem('bta_auth')) || { user: "BRAIN", pass: "2026" };
+    let config = JSON.parse(localStorage.getItem('bta_config')) || { expiryYear: 2028, daysOpen: 0, approvalHistory: [] };
+    let currentStudentId = null;
+
+    function getActiveSubjects(cls) {
+        if (!cls) cls = document.getElementById('std-class').value;
+        return cls.startsWith('PRIMARY') ? subjects.ss : subjects.jss;
+    }
+
+    window.onload = function() {
+        if (new Date().getFullYear() > config.expiryYear) {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('expiry-zone').style.display = 'block';
+        }
+        document.getElementById('set-days-open').value = config.daysOpen || 0;
+        initHeader();
+        render();
+        populateSubjectDropdown();
+        updateApprovalLog();
+    };
+
+    function saveAll() {
+        localStorage.setItem('bta_students', JSON.stringify(students));
+        localStorage.setItem('bta_subjects', JSON.stringify(subjects));
+        localStorage.setItem('bta_dates', JSON.stringify(dates));
+        localStorage.setItem('bta_auth', JSON.stringify(auth));
+        localStorage.setItem('bta_config', JSON.stringify(config));
+    }
+
+    // --- MASTER LIST FUNCTIONS ---
+    function openMasterList() {
+        const curClass = document.getElementById('std-class').value;
+        const curTerm = document.getElementById('std-term').value;
+        const activeSubs = getActiveSubjects();
+        let classList = students.filter(s => s.class === curClass && s.term === curTerm);
+
+        if(classList.length === 0) return alert("Babu dalibai a wannan ajin!");
+
+        document.getElementById('admin-page').style.display = 'none';
+        document.getElementById('master-list-view').style.display = 'block';
+        document.getElementById('ml-title').innerText = `${curClass} - ${curTerm} Academic Session`;
+
+        let head = `<tr><th rowspan="2">SN</th><th rowspan="2">NAME OF STUDENT</th>`;
+        activeSubs.forEach(s => head += `<th colspan="3">${s}</th>`);
+        head += `<th rowspan="2">TOTAL</th><th rowspan="2">AVG</th><th rowspan="2">POS</th><th rowspan="2">FEES PAID</th></tr><tr>`;
+        activeSubs.forEach(() => head += `<th>CA</th><th>EX</th><th>T</th>`);
+        head += `</tr>`;
+        document.getElementById('ml-head').innerHTML = head;
+
+        let body = "";
+        classList.forEach((s, idx) => {
+            let rowContent = `<td>${idx+1}</td><td style="text-align:left; text-transform:uppercase;">${s.name}</td>`;
+            let grandTotal = 0;
+            activeSubs.forEach(sub => {
+                let ca = s.marks[sub]?.ca || 0, ex = s.marks[sub]?.ex || 0;
+                let t = ca + ex; grandTotal += t;
+                rowContent += `<td>${ca}</td><td>${ex}</td><td>${t}</td>`;
+            });
+            let avg = activeSubs.length > 0 ? (grandTotal / activeSubs.length).toFixed(1) : 0;
+            let pos = s.manualPos || calculateAutoPosition(s);
+            let fees = s.fees?.paid || 0;
+            body += `<tr>${rowContent}<td>${grandTotal}</td><td>${avg}</td><td>${pos}</td><td>₦${fees}</td></tr>`;
+        });
+        document.getElementById('ml-body').innerHTML = body;
+    }
+
+    function closeMasterList() {
+        document.getElementById('master-list-view').style.display = 'none';
+        document.getElementById('admin-page').style.display = 'block';
+    }
+
+    function triggerDownload(data, filename) {
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    }
+
+    function login() {
+        const u = document.getElementById('username').value.trim().toUpperCase();
+        const p = document.getElementById('password').value.trim();
+        if(u === auth.user && p === auth.pass) {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('admin-page').style.display = 'block';
+            initHeader(); render();
+        } else { alert("Wrong Credentials!"); }
+    }
+
+    function openTeacherPortal() {
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('teacher-portal').style.display = 'block';
+        populateSubjectDropdown();
+    }
+
+    function populateSubjectDropdown() {
+        const cls = document.getElementById('t-class-select').value;
+        const select = document.getElementById('t-subject-select');
+        const activeSubs = getActiveSubjects(cls);
+        select.innerHTML = activeSubs.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function generateAllSchoolFile() {
+        if (students.length === 0) return alert("No students found in the system!");
+        const data = {
+            isAllSchool: true,
+            schoolName: "DATA MANAGEMENT SYSTEM",
+            students: students.map(s => ({ 
+                id: s.id, gID: s.studentGroupID, name: s.name, class: s.class, term: s.term, marks: s.marks 
+            }))
+        };
+        triggerDownload(data, "system_school_data.json");
+        alert("FILE DOWNLOADED! Send this file to the teachers.");
+    }
+
+    function importFromAdminFile(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const decoded = JSON.parse(e.target.result);
+                if(decoded.isAllSchool || decoded.isFullResultsBackup) {
+                    const incomingStudents = decoded.students || decoded.data;
+                    incomingStudents.forEach(item => {
+                        let s = students.find(x => x.id == item.id);
+                        if(!s) {
+                            students.push({ id: item.id, studentGroupID: item.gID || item.studentGroupID, name: item.name, class: item.class, term: item.term, marks: item.marks, fees: item.fees || {}, attd: item.attd || 0 });
+                        } else {
+                            s.marks = { ...s.marks, ...item.marks };
+                            s.name = item.name;
+                        }
+                    });
+                    saveAll();
+                    alert("SUCCESS: Data loaded successfully.");
+                    loadTeacherList();
+                } else { alert("This file format is not recognized!"); }
+            } catch(err) { alert("Error reading the file!"); }
+        };
+        reader.readAsText(file);
+    }
+
+    function loadTeacherList() {
+        const cls = document.getElementById('t-class-select').value;
+        const trm = document.getElementById('t-term-select').value;
+        const sub = document.getElementById('t-subject-select').value;
+        const tbody = document.getElementById('teacher-student-list');
+        let classList = students.filter(s => s.class === cls && s.term === trm);
+        if(classList.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='5' style='padding:20px;'>No students in this class. Load Admin file or use 'REFRESH LIST'.</td></tr>";
+            return;
+        }
+        tbody.innerHTML = classList.map((s, idx) => {
+            let ca = s.marks[sub]?.ca || 0; let ex = s.marks[sub]?.ex || 0;
+            return `<tr><td>${idx+1}</td><td style="text-align:left; text-transform:uppercase;">${s.name}</td><td><input type="number" class="t-input t-ca" data-id="${s.id}" value="${ca}" onfocus="this.value=''" oninput="updateTTotal(this)"></td><td><input type="number" class="t-input t-ex" data-id="${s.id}" value="${ex}" onfocus="this.value=''" oninput="updateTTotal(this)"></td><td class="t-total" style="font-weight:bold">${ca+ex}</td></tr>`;
+        }).join('');
+    }
+
+    function updateTTotal(input) {
+        let row = input.closest('tr');
+        let ca = parseInt(row.querySelector('.t-ca').value) || 0;
+        let ex = parseInt(row.querySelector('.t-ex').value) || 0;
+        let studentId = row.querySelector('.t-ca').dataset.id;
+        let sub = document.getElementById('t-subject-select').value;
+        row.querySelector('.t-total').innerText = ca + ex;
+        let s = students.find(x => x.id == studentId);
+        if(s) {
+            if(!s.marks) s.marks = {}; 
+            s.marks[sub] = { ca: ca, ex: ex };
+            saveAll(); 
+        }
+    }
+
+    function downloadTeacherResultFile() {
+        if (students.length === 0) return alert("No data to download!");
+        let resultData = { 
+            isFullResultsBackup: true,
+            schoolName: "DATA MANAGEMENT SYSTEM",
+            timestamp: new Date().toLocaleString(),
+            data: students.map(s => ({ id: s.id, name: s.name, class: s.class, term: s.term, marks: s.marks }))
+        };
+        triggerDownload(resultData, "SYSTEM_ALL_CLASSES_RESULTS.json");
+        alert("SUCCESS: Full results file downloaded. Send this to Admin.");
+    }
+
+    function approveResultFromFile() {
+        const file = document.getElementById('admin-result-file').files[0];
+        if (!file) return alert("Please select a file!");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const decoded = JSON.parse(e.target.result);
+                let count = 0;
+                let subjectsUpdated = new Set(); 
+                if (decoded.isFullResultsBackup || decoded.isAllSchool) {
+                    const incoming = decoded.data || decoded.students;
+                    incoming.forEach(item => {
+                        let s = students.find(x => x.id == item.id);
+                        if(s) { 
+                            if(!s.marks) s.marks = {};
+                            for(let subKey in item.marks) {
+                                let ca = item.marks[subKey].ca;
+                                let ex = item.marks[subKey].ex;
+                                if((ca !== undefined && ca !== 0) || (ex !== undefined && ex !== 0)) {
+                                    s.marks[subKey] = item.marks[subKey];
+                                    subjectsUpdated.add(subKey);
+                                }
+                            }
+                            count++;
+                        }
+                    });
+                    let subList = Array.from(subjectsUpdated).join(', ');
+                    if(!config.approvalHistory) config.approvalHistory = [];
+                    let logEntry = subList ? `${subList} (${new Date().toLocaleTimeString()})` : `Updated ${count} Students (${new Date().toLocaleTimeString()})`;
+                    config.approvalHistory.unshift(logEntry);
+                }
+                if(config.approvalHistory.length > 10) config.approvalHistory.pop();
+                saveAll(); render(); updateApprovalLog();
+                alert("RESULTS APPROVED!\nSubjects: " + (Array.from(subjectsUpdated).join(', ') || "None"));
+            } catch(err) { alert("Error during Approval!"); }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- LOG MANAGEMENT (UPDATED) ---
+    function updateApprovalLog() {
+        const container = document.getElementById('log-content');
+        if(!config.approvalHistory || config.approvalHistory.length === 0) {
+            container.innerHTML = '<span style="color:#888; font-size:10px;">No results approved yet.</span>';
+            return;
+        }
+        container.innerHTML = config.approvalHistory.map((entry, idx) => 
+            `<span class="status-badge">
+                ✅ ${entry} 
+                <span class="del-log-btn" onclick="deleteLogEntry(${idx})">×</span>
+            </span>`
+        ).join('');
+    }
+
+    function deleteLogEntry(index) {
+        if(confirm("Goge wannan tarihin?")) {
+            config.approvalHistory.splice(index, 1);
+            saveAll();
+            updateApprovalLog();
+        }
+    }
+
+    function initHeader() {
+        const hr1 = document.getElementById('hr1'); const hr2 = document.getElementById('hr2');
+        if(!hr1 || !hr2) return;
+        const activeSubs = getActiveSubjects();
+        hr1.innerHTML = '<th rowspan="2">NO</th><th rowspan="2">Student Name</th>';
+        hr2.innerHTML = '';
+        activeSubs.forEach(s => { hr1.innerHTML += `<th colspan="3">${s}</th>`; hr2.innerHTML += `<th>CA</th><th>EX</th><th>T</th>`; });
+        hr1.innerHTML += `<th rowspan="2">Attd (Pres)</th><th colspan="3">Fees</th><th rowspan="2" class="no-print">Actions</th>`;
+        hr2.innerHTML += `<th>Total</th><th>Paid</th><th>Next</th>`;
+    }
+
+    function render() {
+        const list = document.getElementById('student-list'); if(!list) return; list.innerHTML = "";
+        const curClass = document.getElementById('std-class').value;
+        const curTerm = document.getElementById('std-term').value;
+        const activeSubs = getActiveSubjects();
+        let classList = students.filter(s => s.class === curClass && s.term === curTerm);
+        let rows = "";
+        classList.forEach((s, idx) => {
+            let subCells = '';
+            activeSubs.forEach((sub, subIdx) => {
+                let ca = s.marks[sub]?.ca || 0, ex = s.marks[sub]?.ex || 0;
+                subCells += `<td><input type="number" class="main-input" value="${ca}" onfocus="this.value=''" oninput="updateMarkDirect(${s.id},'${sub}','ca',this.value, 't-${s.id}-${subIdx}')"></td><td><input type="number" class="main-input" value="${ex}" onfocus="this.value=''" oninput="updateMarkDirect(${s.id},'${sub}','ex',this.value, 't-${s.id}-${subIdx}')"></td><td id="t-${s.id}-${subIdx}">${ca+ex}</td>`;
+            });
+            rows += `<tr><td>${idx+1}</td><td><input type="text" class="name-input" value="${s.name}" oninput="this.value = this.value.toUpperCase(); updateNameDirect(${s.id}, this.value)"></td>${subCells}<td><input type="number" class="attd-input" value="${s.attd||0}" oninput="updateAttendanceDirect(${s.id}, this.value)"></td><td><input type="number" class="fee-input" value="${s.fees?.total||0}" oninput="updateFeesDirect(${s.id},'total',this.value)"></td><td><input type="number" class="fee-input" value="${s.fees?.paid||0}" oninput="updateFeesDirect(${s.id},'paid',this.value)"></td><td><input type="number" class="fee-input" value="${s.fees?.next||0}" oninput="updateFeesDirect(${s.id},'next',this.value)"></td><td class="no-print"><button class="btn btn-info" onclick="openStudentCard(${s.id})">View</button> <button class="btn btn-del" onclick="deleteStudent(${s.id})">X</button></td></tr>`;
+        });
+        list.innerHTML = rows;
+    }
+
+    function updateMarkDirect(id, sub, field, val, totalCellId) {
+        const s = students.find(x => x.id === id);
+        if(!s.marks[sub]) s.marks[sub] = {ca:0, ex:0};
+        s.marks[sub][field] = parseInt(val) || 0;
+        document.getElementById(totalCellId).innerText = (s.marks[sub].ca || 0) + (s.marks[sub].ex || 0);
+        saveAll();
+    }
+
+    function updateNameDirect(id, val) { 
+        const s = students.find(x => x.id === id); if(s) { 
+            const newName = val.toUpperCase(); const gID = s.studentGroupID;
+            if(gID) { students.forEach(std => { if(std.studentGroupID === gID) std.name = newName; }); } else { s.name = newName; }
+            saveAll(); 
+        } 
+    }
+
+    function updateAttendanceDirect(id, val) { const s = students.find(x => x.id === id); if(s) { s.attd = parseInt(val) || 0; saveAll(); } }
+    function updateFeesDirect(id, field, val) { const s = students.find(x => x.id === id); if(!s.fees) s.fees = {total:0, paid:0, next:0}; s.fees[field] = parseInt(val) || 0; saveAll(); }
+    
+    function openStudentCard(id) {
+        currentStudentId = id; const s = students.find(x => x.id === id); if(!s) return;
+        document.getElementById('admin-page').style.display = 'none';
+        document.getElementById('student-card-view').style.display = 'block';
+        document.getElementById('nav-class').value = s.class; document.getElementById('nav-term').value = s.term;
+        refreshStudentDisplay(s);
+    }
+
+    function refreshStudentDisplay(s) {
+        const classList = students.filter(x => x.class === s.class && x.term === s.term);
+        const roll = classList.findIndex(x => x.id === s.id) + 1;
+        document.getElementById('card-meta').innerHTML = `<div class="card-info-grid"><div>NAME: <input type="text" class="card-edit" style="width:180px; text-align:left;" value="${s.name}" oninput="this.value = this.value.toUpperCase(); updateDataField('name', this.value)"></div><div style="text-align:right">CLASS: ${s.class}</div><div>TERM: ${s.term}</div><div style="text-align:right">ROLL NO: ${roll}</div></div>`;
+        refreshCardTable(s);
+    }
+
+    function calculateAutoPosition(student) {
+        let classList = students.filter(s => s.class === student.class && s.term === student.term);
+        const activeSubs = getActiveSubjects(student.class);
+        let ranking = classList.map(s => {
+            let t = 0; activeSubs.forEach(sub => t += (s.marks[sub]?.ca||0) + (s.marks[sub]?.ex||0));
+            return { id: s.id, score: t };
+        }).sort((a,b) => b.score - a.score);
+        let p = ranking.findIndex(x => x.id === student.id) + 1;
+        return p > 0 ? p + (['st','nd','rd'][p-1] || 'th') : "";
+    }
+
+    function refreshCardTable(s) {
+        let rows = "", totalMarks = 0; const activeSubs = getActiveSubjects(s.class);
+        activeSubs.forEach(sub => {
+            let ca = s.marks[sub]?.ca || 0, ex = s.marks[sub]?.ex || 0; let t = ca + ex; totalMarks += t;
+            rows += `<tr><td style="text-align:left; padding-left:10px;">${sub}</td><td><input type="number" class="card-edit" style="width:35px" value="${ca}" onfocus="this.value=''" oninput="updateMark(${s.id},'${sub}','ca',this.value)"></td><td><input type="number" class="card-edit" style="width:35px" value="${ex}" onfocus="this.value=''" oninput="updateMark(${s.id},'${sub}','ex',this.value)"></td><td>${t}</td><td>${t>=70?'A':t>=60?'B':t>=50?'C':t>=40?'D':'F'}</td></tr>`;
+        });
+        document.getElementById('card-body').innerHTML = rows;
+        let avg = activeSubs.length > 0 ? (totalMarks/activeSubs.length).toFixed(1) : 0;
+        document.getElementById('card-avg').innerText = avg;
+        document.getElementById('v-pos').value = s.manualPos || calculateAutoPosition(s);
+        
+        if(s.term === "3rd Term") {
+            let autoDecision = avg >= 40 ? "PROMOTED" : (avg >= 35 ? "ADVICE TO REPEAT" : "REPEAT");
+            s.decision = autoDecision;
+            document.getElementById('v-decision').value = autoDecision;
+            document.getElementById('card-decision').style.display = "block";
+        } else {
+            document.getElementById('card-decision').style.display = "none";
+        }
+
+        let totalOpen = parseInt(config.daysOpen) || 0; let present = s.attd || 0; let absent = totalOpen - present;
+        document.getElementById('v-days-open').innerText = totalOpen;
+        document.getElementById('v-attd').value = present;
+        document.getElementById('v-absent').innerText = absent < 0 ? 0 : absent;
+        document.getElementById('v-f-total').value = s.fees?.total || 0;
+        document.getElementById('v-f-paid').value = s.fees?.paid || 0;
+        document.getElementById('v-f-bal').innerText = (s.fees?.total||0) - (s.fees?.paid||0);
+        document.getElementById('v-f-next').value = s.fees?.next || 0;
+        document.getElementById('v-remark').value = s.remark || "";
+        document.getElementById('v-vac-date').innerText = dates.vac; document.getElementById('v-res-date').innerText = dates.res;
+    }
+
+    function updateAttendance(val) { const s = students.find(x => x.id === currentStudentId); if(s) { s.attd = parseInt(val) || 0; refreshCardTable(s); saveAll(); } }
+    function updateMark(id, sub, field, val) { const s = students.find(x => x.id === id); if(!s.marks[sub]) s.marks[sub] = {ca:0, x:0}; s.marks[sub][field] = parseInt(val) || 0; saveAll(); let totalMarks = 0; const activeSubs = getActiveSubjects(s.class); activeSubs.forEach(sb => totalMarks += (s.marks[sb]?.ca||0) + (s.marks[sb]?.ex||0)); document.getElementById('card-avg').innerText = activeSubs.length > 0 ? (totalMarks/activeSubs.length).toFixed(1) : 0; refreshCardTable(s); }
+    function updateFees(field, val) { const s = students.find(x => x.id === currentStudentId); if(!s.fees) s.fees = {total:0, paid:0, next:0}; s.fees[field] = parseInt(val) || 0; document.getElementById('v-f-bal').innerText = (s.fees.total||0) - (s.fees.paid||0); saveAll(); }
+
+    function updateDataField(field, val) { 
+        const s = students.find(x => x.id === currentStudentId); if(s) { 
+            if(field === 'name') {
+                const upName = val.toUpperCase(); const gID = s.studentGroupID;
+                if(gID) { students.forEach(std => { if(std.studentGroupID === gID) std.name = upName; }); } else { s.name = upName; }
+            } else { s[field] = val; }
+            saveAll(); 
+        } 
+    }
+
+    function searchStudent() { const roll = parseInt(document.getElementById('nav-roll').value); const cls = document.getElementById('nav-class').value; const trm = document.getElementById('nav-term').value; const classList = students.filter(s => s.class === cls && s.term === trm); if(roll > 0 && roll <= classList.length) openStudentCard(classList[roll-1].id); else alert("Student not found!"); }
+    function navigateStudent() { const cls = document.getElementById('nav-class').value; const trm = document.getElementById('nav-term').value; const found = students.find(s => s.class === cls && s.term === trm); if(found) openStudentCard(found.id); }
+    function viewFirstStudent() { const curClass = document.getElementById('std-class').value; const curTerm = document.getElementById('std-term').value; let classList = students.filter(s => s.class === curClass && s.term === curTerm); if(classList.length > 0) openStudentCard(classList[0].id); else alert("No students!"); }
+    
+    function addNewRow() { 
+        let name = prompt("Enter Name:"); if (!name) return;
+        name = name.toUpperCase(); const curClass = document.getElementById('std-class').value;
+        const groupID = Date.now(); const terms = ["1st Term", "2nd Term", "3rd Term"];
+        terms.forEach(term => { students.push({ id: groupID + (term === "1st Term" ? 1 : term === "2nd Term" ? 2 : 3), studentGroupID: groupID, name: name, class: curClass, term: term, marks: {}, fees: {}, attd: 0 }); });
+        saveAll(); render(); 
+    }
+
+    function deleteStudent(id) { if(confirm("Delete Student?")) { students = students.filter(x => x.id !== id); saveAll(); render(); } }
+    function closeView(id) { document.getElementById(id).style.display = 'none'; document.getElementById('admin-page').style.display = 'block'; render(); }
+    function toggleSettings() { const p = document.getElementById('settings-panel'); p.style.display = p.style.display === 'block' ? 'none' : 'block'; if(p.style.display === 'block') renderSettingsSubjectList(); }
+    function saveDatesFromSettings() { dates.vac = document.getElementById('set-vacation').value; dates.res = document.getElementById('set-resumption').value; saveAll(); }
+    function exportData() { triggerDownload({students, subjects, dates, auth, config}, "system_backup.json"); }
+    function importData(event) { const file = event.target.files[0]; const reader = new FileReader(); reader.onload = function(e) { try { const data = JSON.parse(e.target.result); students = data.students || students; subjects = data.subjects || subjects; dates = data.dates || dates; config = data.config || config; saveAll(); location.reload(); } catch(err) { alert("Error restoring data!"); } }; reader.readAsText(file); }
+    function addSubject(type) { let inputId = type === 'jss' ? 'new-jss-sub' : 'new-ss-sub'; let name = document.getElementById(inputId).value.trim().toUpperCase(); if(name && !subjects[type].includes(name)) { subjects[type].push(name); saveAll(); renderSettingsSubjectList(); initHeader(); render(); document.getElementById(inputId).value = ""; } }
+    function removeSubject(sub, type) { if(confirm(`Delete ${sub}?`)) { subjects[type] = subjects[type].filter(s => s !== sub); saveAll(); renderSettingsSubjectList(); initHeader(); render(); } }
+    function renderSettingsSubjectList() { document.getElementById('jss-subject-list').innerHTML = subjects.jss.map(s => `<div style="display:flex; justify-content:space-between; padding:3px; border-bottom:1px solid #eee; font-size:10px;"><span>${s}</span><button class="btn btn-del" style="padding:2px 5px;" onclick="removeSubject('${s}', 'jss')">X</button></div>`).join(''); document.getElementById('ss-subject-list').innerHTML = subjects.ss.map(s => `<div style="display:flex; justify-content:space-between; padding:3px; border-bottom:1px solid #eee; font-size:10px;"><span>${s}</span><button class="btn btn-del" style="padding:2px 5px;" onclick="removeSubject('${s}', 'ss')">X</button></div>`).join(''); }
+    function changePassword() { const oldP = document.getElementById('old-pass').value; const name = document.getElementById('new-pass').value; if(oldP === auth.pass && name === document.getElementById('conf-pass').value) { auth.pass = name; saveAll(); alert("Password Updated Successfully!"); } else alert("Check your inputs!"); }
+    function saveGlobalSettings() { config.daysOpen = document.getElementById('set-days-open').value; saveAll(); }
+    function applyGlobalFee() { const fee = document.getElementById('set-global-fee').value; if(!fee) return; const curClass = document.getElementById('std-class').value; const curTerm = document.getElementById('std-term').value; students.forEach(s => { if(s.class === curClass && s.term === curTerm) { if(!s.fees) s.fees = {}; s.fees.total = parseInt(fee); } }); saveAll(); render(); alert("Fees Applied to All!"); }
+    function applyNextTermFee() { const fee = document.getElementById('set-next-fee').value; if(!fee) return; const curClass = document.getElementById('std-class').value; const curTerm = document.getElementById('std-term').value; students.forEach(s => { if(s.class === curClass && s.term === curTerm) { if(!s.fees) s.fees = {}; s.fees.next = parseInt(fee); } }); saveAll(); render(); alert("Next Term Fees Applied!"); }
+</script>
+</body>
+</html>
